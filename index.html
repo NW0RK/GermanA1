@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DeutschQuest — Gamified German A1 learning with spaced repetition, boss fights, and a visual grammar node synthesizer.">
+  <title>DeutschQuest — German A1 Master</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══ Particle Background ═══════════════════════════════════════════════ -->
+<canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+<!-- ═══ App Shell ══════════════════════════════════════════════════════════ -->
+<div id="app-root">
+
+  <!-- Header -->
+  <header class="app-header" role="banner">
+    <div class="header-logo" aria-label="DeutschQuest home" role="button" tabindex="0" onclick="Router.navigate('dashboard'); Audio.play('click')" onkeydown="if(event.key==='Enter'||event.key===' ') { Router.navigate('dashboard'); Audio.play('click'); }" title="Go to home" style="cursor:pointer">🇩🇪 DeutschQuest</div>
+
+    <div class="header-stats" aria-label="Progress stats">
+      <div class="header-level-badge" id="header-level" aria-live="polite">Lv.1</div>
+      <div class="header-xp-wrap" aria-label="XP progress">
+        <div class="header-xp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+          <div class="header-xp-bar-fill" id="header-xp-fill"></div>
+        </div>
+        <span class="header-xp" id="header-xp">0 XP</span>
+      </div>
+      <div class="header-streak" id="header-streak" aria-label="Daily streak" title="Daily streak">🔥 0</div>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-btn" id="node-lab-btn" onclick="Router.navigate('nodes'); Audio.play('click')" title="Open Grammar Node Lab" aria-label="Grammar Node Lab">⚡</button>
+      <button class="icon-btn" id="resources-nav-btn" onclick="Router.navigate('resources'); Audio.play('click')" title="Course Resources" aria-label="Course Resources">📚</button>
+      <button class="icon-btn" id="settings-btn" onclick="openSettings()" title="Settings" aria-label="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       VIEW: DASHBOARD
+       ════════════════════════════════════════════════════════════════════ -->
+  <main id="dashboard-view" class="view" role="main" aria-label="Dashboard">
+
+    <!-- Hero -->
+    <div class="dashboard-hero">
+      <h1 class="hero-title">Willkommen zurück!<br>Viel Erfolg! 🚀</h1>
+      <p class="hero-sub">Your German A1 journey continues. Master words, defeat bosses, build sentences.</p>
+      <div class="hero-stats-bar" aria-label="Today's progress">
+        <span>Today: <strong id="daily-reviews">0 / 5</strong> reviews</span>
+        <span>•</span>
+        <span>Level <strong id="db-level">1</strong></span>
+        <span>•</span>
+        <span>Streak <strong id="db-streak">0</strong> 🔥</span>
+      </div>
+    </div>
+
+    <!-- Deck Cards -->
+    <section aria-label="Study decks">
+      <div class="deck-grid">
+
+        <!-- Deck Card — populated by JS (renderDashboard), but HTML skeleton here -->
+        <!-- DECK 1 -->
+        <article class="deck-card deck-unlocked" id="deck-card-1" style="--dc:#ff2d78; --card-glow:rgba(255,45,120,.2)">
+          <div class="deck-card-top">
+            <div class="deck-icon">🌱</div>
+            <div class="deck-info">
+              <div class="deck-name">Erste Schritte</div>
+              <div class="deck-subtitle">First Steps</div>
+            </div>
+            <div>
+              <div class="deck-boss-score" style="display:none"></div>
+              <div class="deck-mastery">0% mastered</div>
+            </div>
+          </div>
+          <div class="deck-desc">Greetings, subject pronouns, and the verbs sein &amp; haben.</div>
+          <div class="grammar-topics">
+            <span class="topic-pill">Pronouns</span>
+            <span class="topic-pill">sein / haben</span>
+            <span class="topic-pill">Basic adjectives</span>
+            <span class="topic-pill">Phrases</span>
+          </div>
+          <div class="leitner-bars" aria-label="Leitner box progress"></div>
+          <div class="deck-actions"></div>
+        </article>
+
+        <!-- DECK 2 -->
+        <article class="deck-card deck-locked" id="deck-card-2" style="--dc:#00f5ff; --card-glow:rgba(0,245,255,.15)">
+          <div class="deck-card-top">
+            <div class="deck-icon">🌍</div>
+            <div class="deck-info">
+              <div class="deck-name">Die Welt</div>
+              <div class="deck-subtitle">The World</div>
+            </div>
+            <div>
+              <div class="deck-boss-score" style="display:none"></div>
+              <div class="deck-mastery">0% mastered</div>
+            </div>
+          </div>
+          <div class="deck-desc">Definite articles, nominative case, and regular present-tense verbs.</div>
+          <div class="grammar-topics">
+            <span class="topic-pill">der / die / das</span>
+            <span class="topic-pill">Nominative case</span>
+            <span class="topic-pill">Regular verbs</span>
+          </div>
+          <div class="leitner-bars" aria-label="Leitner box progress"></div>
+          <div class="deck-actions"></div>
+        </article>
+
+        <!-- DECK 3 -->
+        <article class="deck-card deck-locked" id="deck-card-3" style="--dc:#ffe600; --card-glow:rgba(255,230,0,.12)">
+          <div class="deck-card-top">
+            <div class="deck-icon">⚡</div>
+            <div class="deck-info">
+              <div class="deck-name">Im Alltag</div>
+              <div class="deck-subtitle">Everyday Life</div>
+            </div>
+            <div>
+              <div class="deck-boss-score" style="display:none"></div>
+              <div class="deck-mastery">0% mastered</div>
+            </div>
+          </div>
+          <div class="deck-desc">Accusative case, irregular verbs, and food &amp; drink vocabulary.</div>
+          <div class="grammar-topics">
+            <span class="topic-pill">Accusative case</span>
+            <span class="topic-pill">Irregular verbs</span>
+            <span class="topic-pill">Food &amp; drink</span>
+          </div>
+          <div class="leitner-bars" aria-label="Leitner box progress"></div>
+          <div class="deck-actions"></div>
+        </article>
+
+        <!-- DECK 4 -->
+        <article class="deck-card deck-unlocked" id="deck-card-4" style="--dc:#a200ff; --card-glow:rgba(162,0,255,.18)">
+          <div class="deck-card-top">
+            <div class="deck-icon">🏃</div>
+            <div class="deck-info">
+              <div class="deck-name">Seminar 04.03</div>
+              <div class="deck-subtitle">Aktivitäten und Verben</div>
+            </div>
+            <div>
+              <div class="deck-boss-score" style="display:none"></div>
+              <div class="deck-mastery">0% mastered</div>
+            </div>
+          </div>
+          <div class="deck-desc">Verbs from the 04.03.2025 seminar: activities, movement, and daily actions.</div>
+          <div class="grammar-topics">
+            <span class="topic-pill">Regular verbs</span>
+            <span class="topic-pill">Verb conjugations</span>
+            <span class="topic-pill">Activities</span>
+          </div>
+          <div class="leitner-bars" aria-label="Leitner box progress"></div>
+          <div class="deck-actions"></div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="neon-btn" id="open-node-lab-btn"
+              onclick="Router.navigate('nodes'); Audio.play('click')"
+              aria-label="Open Grammar Node Lab">
+        ⚡ Grammar Node Lab
+      </button>
+      <button class="neon-btn" id="open-resources-btn"
+              onclick="Router.navigate('resources'); Audio.play('click')"
+              aria-label="Open course resources"
+              style="--bc:#a855f7">
+        📚 Course Resources
+      </button>
+    </div>
+
+    <!-- Leitner legend -->
+    <div style="text-align:center; font-size:0.72rem; color:var(--text-muted); margin-bottom:var(--gap-lg);">
+      <span style="color:#ff2d78">■</span> Box 1: Learning &nbsp;
+      <span style="color:#00f5ff">■</span> Box 2: Reviewing &nbsp;
+      <span style="color:#00ff88">■</span> Box 3: Mastered
+    </div>
+
+  </main>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       VIEW: FLASHCARDS
+       ════════════════════════════════════════════════════════════════════ -->
+  <section id="flashcard-view" class="view" style="display:none" aria-label="Flashcard review">
+
+    <!-- Header row (always visible) -->
+    <div class="fc-header" id="fc-header-bar">
+      <button class="fc-back-btn" onclick="Router.navigate('dashboard'); Audio.play('click')"
+              aria-label="Back to dashboard">← Back</button>
+      <div class="fc-progress-track" style="flex:1; margin:0 var(--gap-sm)">
+        <div class="fc-progress-fill" id="fc-progress-bar" style="width:0%"></div>
+      </div>
+      <div class="fc-progress-text" id="fc-progress" aria-live="polite">1 / ?</div>
+      <div class="fc-score">
+        <span class="correct-c" id="fc-correct" aria-label="Correct">✓ 0</span>
+        <span class="wrong-c"   id="fc-wrong"   aria-label="Wrong">✗ 0</span>
+      </div>
+    </div>
+
+    <!-- The 3D flashcard -->
+    <div class="flashcard-scene" id="flashcard-container" role="button"
+         aria-label="Flashcard — click to flip" tabindex="0"
+         onkeydown="if(event.key==='Enter'||event.key===' ') Flashcards.flipCard()">
+      <div class="flashcard" id="flashcard">
+        <div class="card-face card-front" id="card-front">
+          <!-- Populated by flashcards.js -->
+        </div>
+        <div class="card-face card-back" id="card-back">
+          <!-- Populated by flashcards.js -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ✓ / ✗ buttons (shown after flip) -->
+    <div id="fc-answer-buttons" style="display:none" role="group" aria-label="Rate your answer">
+      <button class="fc-wrong-btn"   id="fc-wrong-btn"   onclick="Flashcards.markWrong()"   aria-label="I got it wrong">✗&nbsp; Wrong</button>
+      <button class="fc-correct-btn" id="fc-correct-btn" onclick="Flashcards.markCorrect()" aria-label="I got it right">✓&nbsp; Correct</button>
+    </div>
+
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       VIEW: BOSS FIGHT
+       ════════════════════════════════════════════════════════════════════ -->
+  <section id="boss-view" class="view" style="display:none" aria-label="Boss fight quiz">
+    <!-- Content injected by boss.js -->
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       VIEW: RESOURCES
+       ════════════════════════════════════════════════════════════════════ -->
+  <section id="resources-view" class="view" style="display:none" aria-label="Course Resources">
+
+    <div class="node-lab-header">
+      <button class="fc-back-btn" onclick="Router.navigate('dashboard'); Audio.play('click')" aria-label="Back">← Back</button>
+      <span class="node-lab-title">📚 Course Resources</span>
+    </div>
+
+    <div class="resources-container">
+
+      <!-- Textbook -->
+      <div class="resources-group">
+        <h2 class="resources-group-title">📖 Textbook</h2>
+        <div class="resources-grid">
+          <a class="resource-card resource-pdf" href="resources/Textbook.pdf" target="_blank" rel="noopener">
+            <div class="resource-icon">📄</div>
+            <div class="resource-info">
+              <div class="resource-name">Textbook.pdf</div>
+              <div class="resource-meta">Course textbook · PDF</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Lectures -->
+      <div class="resources-group">
+        <h2 class="resources-group-title">🎓 Lectures (ლექცია)</h2>
+        <div class="resources-grid">
+          <a class="resource-card resource-ppt" href="resources/I%20%E1%83%9A%E1%83%94%E1%83%A5%E1%83%AA%E1%83%98%E1%83%90_KIU%20PPT.%2002.03.2026.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Lecture I</div>
+              <div class="resource-meta">02.03.2026 · PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+          <a class="resource-card resource-ppt" href="resources/II%20%E1%83%9A%E1%83%94%E1%83%A5%E1%83%AA%E1%83%98%E1%83%90.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Lecture II (short)</div>
+              <div class="resource-meta">PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+          <a class="resource-card resource-ppt" href="resources/II%20%E1%83%9A%E1%83%94%E1%83%A5%E1%83%AA%E1%83%98%E1%83%90_KIU%20PPT.%2009.03.2026.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Lecture II</div>
+              <div class="resource-meta">09.03.2026 · PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+          <a class="resource-card resource-ppt" href="resources/III%20%E1%83%9A%E1%83%94%E1%83%A5%E1%83%AA%E1%83%98%E1%83%90_KIU%20PPT.%2016.03.2026.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Lecture III</div>
+              <div class="resource-meta">16.03.2026 · PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+          <a class="resource-card resource-ppt" href="resources/IV%20%E1%83%9A%E1%83%94%E1%83%A5%E1%83%AA%E1%83%98%E1%83%90_KIU%20PPT.%2023.03.2026.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Lecture IV</div>
+              <div class="resource-meta">23.03.2026 · PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+          <a class="resource-card resource-ppt" href="resources/V%20%E1%83%9A%E1%83%94%E1%83%A5%E1%83%AA%E1%83%98%E1%83%90_KIU%20PPT.%2030.03.2026.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Lecture V</div>
+              <div class="resource-meta">30.03.2026 · PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+          <a class="resource-card resource-ppt" href="resources/VI%20%E1%83%9A%E1%83%94%E1%83%A5%E1%83%AA%E1%83%98%E1%83%90_KIU%20PPT.%2006.04.2026.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Lecture VI</div>
+              <div class="resource-meta">06.04.2026 · PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Seminars -->
+      <div class="resources-group">
+        <h2 class="resources-group-title">📝 Seminars (სემინარი)</h2>
+        <div class="resources-grid">
+          <a class="resource-card resource-ppt" href="resources/I%20%E1%83%A1%E1%83%94%E1%83%9B%E1%83%98%E1%83%9C%E1%83%90%E1%83%A0%E1%83%98_KIU%20PPT.%2004.03.2026.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Seminar I</div>
+              <div class="resource-meta">04.03.2026 · PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+          <a class="resource-card resource-ppt" href="resources/II%20%E1%83%A1%E1%83%94%E1%83%9B%E1%83%98%E1%83%9C%E1%83%90%E1%83%A0%E1%83%98_KIU%20PPT.%2011.03.2026.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Seminar II</div>
+              <div class="resource-meta">11.03.2026 · PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+          <a class="resource-card resource-ppt" href="resources/IV%20%E1%83%A1%E1%83%94%E1%83%9B%E1%83%98%E1%83%9C%E1%83%90%E1%83%A0%E1%83%98_KIU%20PPT.%2025.03.2026.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Seminar IV</div>
+              <div class="resource-meta">25.03.2026 · PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+          <a class="resource-card resource-ppt" href="resources/V%20%E1%83%A1%E1%83%94%E1%83%9B%E1%83%98%E1%83%9C%E1%83%90%E1%83%A0%E1%83%98_KIU%20PPT.%2001.04.2026.pptx" target="_blank" rel="noopener">
+            <div class="resource-icon">📊</div>
+            <div class="resource-info">
+              <div class="resource-name">Seminar V</div>
+              <div class="resource-meta">01.04.2026 · PPTX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Assignments & Extras -->
+      <div class="resources-group">
+        <h2 class="resources-group-title">📋 Assignments &amp; Extras (დავალება)</h2>
+        <div class="resources-grid">
+          <a class="resource-card resource-doc" href="resources/%E1%83%93%E1%83%90%E1%83%95%E1%83%90%E1%83%9A%E1%83%94%E1%83%91%E1%83%90-%E1%83%A1%E1%83%94%E1%83%9B%E1%83%98%E1%83%9C%E1%83%90%E1%83%A0%E1%83%98%2004.03.25.rtf" target="_blank" rel="noopener">
+            <div class="resource-icon">📝</div>
+            <div class="resource-info">
+              <div class="resource-name">Assignment – Seminar 04.03</div>
+              <div class="resource-meta">04.03.2025 · RTF</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+          <a class="resource-card resource-doc" href="resources/%E1%83%96%E1%83%9B%E1%83%9C%E1%83%94%E1%83%91%E1%83%98-%E1%83%A1%E1%83%98%E1%83%A2%E1%83%A7%E1%83%95%E1%83%94%E1%83%91%E1%83%98%2002.03.2025.docx" target="_blank" rel="noopener">
+            <div class="resource-icon">📝</div>
+            <div class="resource-info">
+              <div class="resource-name">Verbs &amp; Words 02.03</div>
+              <div class="resource-meta">02.03.2025 · DOCX</div>
+            </div>
+            <div class="resource-open">Open ↗</div>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       VIEW: NODE LAB
+       ════════════════════════════════════════════════════════════════════ -->
+  <section id="nodes-view" class="view" style="display:none" aria-label="Grammar Node Lab">
+
+    <!-- Lab Header -->
+    <div class="node-lab-header">
+      <button class="fc-back-btn" onclick="Router.navigate('dashboard'); Audio.play('click')" aria-label="Back">← Back</button>
+      <span class="node-lab-title">⚡ Grammar Node Lab</span>
+      <div class="node-lab-actions">
+        <button class="ghost-btn" onclick="Nodes.clearAll()" aria-label="Clear canvas" title="Clear all nodes">🗑️ Clear</button>
+      </div>
+    </div>
+
+    <!-- Node Palette -->
+    <div class="node-palette" role="toolbar" aria-label="Add nodes">
+      <span class="palette-label">Add Node:</span>
+      <button class="palette-btn pb-pronoun" onclick="Nodes.addNode('pronoun')" aria-label="Add Pronoun node">
+        👤 Pronoun
+      </button>
+      <button class="palette-btn pb-noun" onclick="Nodes.addNode('noun')" aria-label="Add Noun node">
+        📦 Noun
+      </button>
+      <button class="palette-btn pb-verb" onclick="Nodes.addNode('verb')" aria-label="Add Verb node">
+        ⚙️ Verb
+      </button>
+      <button class="palette-btn pb-article" onclick="Nodes.addNode('article')" aria-label="Add Article node">
+        🏷️ Article
+      </button>
+      <button class="palette-btn pb-output" onclick="Nodes.addNode('output')" aria-label="Add Sentence output node">
+        📝 Sentence
+      </button>
+      <div class="palette-divider" aria-hidden="true"></div>
+      <span class="palette-label" style="font-size:0.68rem">
+        Drag nodes · Click port → port to wire · Select words in dropdowns
+      </span>
+    </div>
+
+    <!-- Canvas area -->
+    <div class="node-canvas-wrap" aria-label="Node canvas">
+      <!-- SVG layer for wires -->
+      <svg id="node-svg" aria-hidden="true">
+        <defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="rgba(255,255,255,0.4)"/>
+          </marker>
+        </defs>
+      </svg>
+      <!-- Nodes rendered here by nodes.js -->
+      <div id="node-canvas" aria-live="polite"></div>
+    </div>
+
+
+
+  </section>
+
+</div><!-- /#app-root -->
+
+<!-- ═══ Settings Modal ═════════════════════════════════════════════════════ -->
+<div id="settings-modal" class="modal-overlay" style="display:none"
+     role="dialog" aria-modal="true" aria-label="Settings"
+     onclick="if(event.target===this) closeSettings()">
+  <div class="modal-box">
+    <h2 class="modal-title">⚙️ Settings</h2>
+
+
+
+    <!-- Sound Effects -->
+    <div class="settings-row">
+      <div class="settings-toggle-row">
+        <span class="toggle-label">🔊 Sound Effects</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="audio-toggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-toggle-row" style="margin-top:10px">
+        <span class="toggle-label">🗣️ German Pronunciation (TTS)</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="tts-toggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="modal-actions">
+      <button class="danger-btn" onclick="confirmReset()" aria-label="Reset all progress">🗑️ Reset Progress</button>
+      <button class="ghost-btn" onclick="closeSettings()">Cancel</button>
+      <button class="neon-btn" id="save-settings-btn" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Scripts ════════════════════════════════════════════════════════════
+     Load order matters: data → core → features → app controller
+     ════════════════════════════════════════════════════════════════════════ -->
+<script src="data/vocabulary.js"></script>
+<script src="data/decks.js"></script>
+<script src="js/state.js"></script>
+<script src="js/leitner.js"></script>
+<script src="js/xp.js"></script>
+<script src="js/audio.js"></script>
+
+<script src="js/flashcards.js"></script>
+<script src="js/boss.js"></script>
+<script src="js/nodes.js"></script>
+<script src="js/router.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
