@@ -19,6 +19,8 @@ const Flashcards = (() => {
   let _conjugMode   = false;
   let _selPronoun   = null;
   let _isFlipped    = false;
+  let _renderToken  = 0;
+  const FLIP_DURATION_MS = 450;
 
   const PRONOUNS = ['ich', 'du', 'er', 'sie', 'wir', 'ihr', 'Sie'];
 
@@ -111,6 +113,8 @@ const Flashcards = (() => {
     _isFlipped    = false;
     _conjugMode   = false;
     _selPronoun   = null;
+    _renderToken++;
+    const renderToken = _renderToken;
 
     const word    = _queue[_index];
     const total   = _queue.length;
@@ -129,16 +133,33 @@ const Flashcards = (() => {
 
     // Reset card flip
     const card = document.getElementById('flashcard');
-    card.classList.remove('flipped');
     card.onclick = _conjugMode ? null : flipCard;
 
-    // Build front
-    const front = document.getElementById('card-front');
-    front.innerHTML = _buildFront(word);
+    const applyCardContent = () => {
+      // Skip stale async updates if another render started.
+      if (renderToken !== _renderToken) return;
+      const front = document.getElementById('card-front');
+      const back = document.getElementById('card-back');
+      front.innerHTML = _buildFront(word);
+      back.innerHTML = _buildBack(word);
+    };
 
-    // Build back
-    const back = document.getElementById('card-back');
-    back.innerHTML = _buildBack(word);
+    const blankCardFaces = () => {
+      const front = document.getElementById('card-front');
+      const back = document.getElementById('card-back');
+      if (front) front.innerHTML = '';
+      if (back) back.innerHTML = '';
+    };
+
+    // If current card is showing the back face, wait for the flip-back to finish
+    // before swapping to next card content to avoid flashing the new answer.
+    if (card.classList.contains('flipped')) {
+      blankCardFaces();
+      card.classList.remove('flipped');
+      setTimeout(applyCardContent, FLIP_DURATION_MS / 2);
+    } else {
+      applyCardContent();
+    }
 
     // Hide answer buttons until card is flipped
     document.getElementById('fc-answer-buttons').style.display = 'none';
