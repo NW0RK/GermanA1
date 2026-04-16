@@ -2,10 +2,10 @@
  * leitner.js — Spaced Repetition Engine (Leitner System)
  *
  *  Box 1 | Review EVERY session          (new / forgotten)
- *  Box 2 | Review every OTHER session    (learning)
- *  Box 3 | Review every THIRD session    (mastered)
+ *  Box 2 | Review when nextReview ≤ today  (1 day interval)
+ *  Box 3 | Review when nextReview ≤ today  (3 day interval)
  *
- *  Correct answer → advance to next box (max Box 3)
+ *  Correct answer → advance to next box + schedule next review
  *  Wrong answer   → drop back to Box 1
  */
 
@@ -13,41 +13,62 @@ const Leitner = (() => {
 
   /** Return the current box number for a word (default: 1 = new) */
   function getBox(wordId) {
-    return State.get().leitnerBoxes[wordId] || 1;
+    return State.get().leitnerBoxes[wordId]?.box || 1;
   }
 
   /** Move a word forward one box after a correct answer */
   function advance(wordId) {
-    const boxes = Object.assign({}, State.get().leitnerBoxes);
-    boxes[wordId] = Math.min((boxes[wordId] || 1) + 1, 3);
+    const boxes = { ...State.get().leitnerBoxes };
+    const today = State.getToday();
+    const current = boxes[wordId]?.box || 1;
+    const nextBox = Math.min(current + 1, 3);
+    boxes[wordId] = { box: nextBox, nextReview: today };
     State.set({ leitnerBoxes: boxes });
   }
 
   /** Drop a word back to Box 1 after a wrong answer */
   function reset(wordId) {
-    const boxes = Object.assign({}, State.get().leitnerBoxes);
-    boxes[wordId] = 1;
+    const boxes = { ...State.get().leitnerBoxes };
+    boxes[wordId] = { box: 1, nextReview: State.getToday() };
     State.set({ leitnerBoxes: boxes });
   }
 
   /**
-   * Determine which words are due for review this session.
-   * @param {string[]} wordIds  - All word IDs in scope (deck or all)
-   * @param {number}   sessionCount - Total sessions completed (0-based counter)
+   * Schedule the next review date for a word based on its current box.
+   * Call after advance() or reset() to set when the word becomes due next.
+   * @param {string} wordId
+   */
+  function scheduleNextReview(wordId) {
+    const boxes = { ...State.get().leitnerBoxes };
+    const data = boxes[wordId] || { box: 1 };
+    const next = new Date();
+
+    if (data.box === 1) next.setDate(next.getDate() + 1);
+    else if (data.box === 2) next.setDate(next.getDate() + 1);
+    else next.setDate(next.getDate() + 3);
+
+    boxes[wordId] = { ...data, nextReview: next.toISOString().slice(0, 10) };
+    State.set({ leitnerBoxes: boxes });
+  }
+
+  /**
+   * Determine which words are due for review today.
+   * @param {string[]} wordIds - All word IDs in scope (deck or all)
    * @returns {string[]} Array of word IDs that are due
    */
-  function getDueWords(wordIds, sessionCount) {
+  function getDueWords(wordIds) {
+    const today = State.getToday();
     return wordIds.filter(id => {
-      const box = getBox(id);
-      if (box === 1) return true;                    // Every session
-      if (box === 2) return sessionCount % 2 === 0;  // Every other session
-      if (box === 3) return sessionCount % 3 === 0;  // Every third session
-      return false;
+      const data = State.get().leitnerBoxes[id];
+      if (!data) return true;
+      if (data.box === 1) return true;
+      return data.nextReview <= today;
     });
   }
 
   /**
    * Get box counts for a set of word IDs.
+   * @param {string[]} wordIds
    * @returns {{ 1: number, 2: number, 3: number }}
    */
   function getDeckStats(wordIds) {
@@ -75,5 +96,33 @@ const Leitner = (() => {
     return Math.round((mastered / wordIds.length) * 100);
   }
 
-  return { getBox, advance, reset, getDueWords, getDeckStats, isDeckBossReady, getMasteryPercent };
+  /**
+   * Migrate from v1 data structure (box numbers) to v2 (nested objects).
+   * Converts { wordId: 1|2|3 } → { wordId: { box: 1|2|3, nextReview: today } }
+   * Safe to call multiple times — only runs if version < 2.
+   */
+  function migrate() {
+    if (State.get().version >= 2) return;
+    const today = State.getToday();
+    const migrated = {};
+    Object.entries(State.get().leitnerBoxes).forEach(([id, box]) => {
+      migrated[id] = {
+        box: typeof box === 'object' ? box.box : box,
+        nextReview: today,
+      };
+    });
+    State.set({ leitnerBoxes: migrated, version: 2 });
+  }
+
+  return {
+    getBox,
+    advance,
+    reset,
+    scheduleNextReview,
+    getDueWords,
+    getDeckStats,
+    isDeckBossReady,
+    getMasteryPercent,
+    migrate,
+  };
 })();

@@ -36,7 +36,7 @@ const Flashcards = (() => {
     const deck = AppData.decks.find(d => d.id === deckId);
     if (!deck) return;
 
-    const due = Leitner.getDueWords(deck.wordIds, State.get().sessionCount);
+    const due = Leitner.getDueWords(deck.wordIds);
     _queue = due
       .map(id => AppData.vocabulary.find(w => w.id === id))
       .filter(Boolean)
@@ -233,6 +233,7 @@ const Flashcards = (() => {
       _correct++;
       Audio.play('correct');
       Leitner.advance(word.id);
+      Leitner.scheduleNextReview(word.id);
       if (xpAmt > 0) {
         XP.addXP(xpAmt);
         XP.showXPToast(`+${xpAmt} XP`);
@@ -242,6 +243,7 @@ const Flashcards = (() => {
       _wrong++;
       Audio.play('wrong');
       Leitner.reset(word.id);
+      Leitner.scheduleNextReview(word.id);
     }
 
     // Show non-verb answer buttons after marking
@@ -257,8 +259,6 @@ const Flashcards = (() => {
   }
 
   function _endSession() {
-    // Increment session counter & check streak
-    State.set({ sessionCount: State.get().sessionCount + 1 });
     XP.checkAndUpdateStreak(_correct + _wrong);
     App.updateHeader();
 

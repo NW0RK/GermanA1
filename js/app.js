@@ -23,6 +23,7 @@ const App = (() => {
   // ── Bootstrap ──────────────────────────────────────────────────────────────
 
   function init() {
+    Leitner.migrate();
     _syncDeckUnlockState();
     _initParticles();
     updateHeader();

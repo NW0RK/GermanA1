@@ -7,7 +7,7 @@
 const STATE_KEY = 'deutschquest_v1';
 
 const DEFAULT_STATE = {
-  version: 1,
+  version: 2,
 
   // Progression
   xp: 0,
@@ -18,10 +18,10 @@ const DEFAULT_STATE = {
   reviewsToday: 0,
   lastReviewDate: null,
 
-  // Leitner boxes: { wordId: 1 | 2 | 3 }
+  // Leitner boxes: { wordId: { box: 1|2|3, nextReview: 'YYYY-MM-DD' } }
   leitnerBoxes: {},
 
-  // Session tracking (used for Leitner scheduling)
+  // Session tracking (analytics only — no longer used for Leitner scheduling)
   sessionCount: 0,
 
   // Unlocked deck IDs
